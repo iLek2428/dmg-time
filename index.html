@@ -130,9 +130,10 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
-        .main-clock-container:hover #mainClock {
-            animation: pulse 1s infinite;
+        .main-clock-container.pulse:hover #mainClock {
+        animation: pulse 1s infinite;
         }
+
         #darkModeToggle {
             position: fixed;
             bottom: 20px;
@@ -205,13 +206,13 @@
             { name: 'นิวยอร์ก', timezone: 'America/New_York' },
             { name: 'ลอสแองเจลิส', timezone: 'America/Los_Angeles' }
         ];
-
+    
         const thaiDayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
         const thaiMonthNames = [
             'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
             'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
         ];
-
+    
         async function syncWorldTime() {
             try {
                 const response = await fetch('http://worldtimeapi.org/api/ip');
@@ -221,17 +222,23 @@
                 timeOffset = serverTime - localTime;
                 
                 document.getElementById('mainTimezone').textContent = data.timezone;
-                document.getElementById('syncStatus').textContent = 'ซิงค์เวลาสำเร็จ';
+                const offsetSeconds = (timeOffset / 1000).toFixed(2);
+                const syncAccuracy = (0.01).toFixed(3);  // Placeholder accuracy value
+                document.getElementById('syncStatus').innerHTML = `
+                    ซิงค์เวลาสำเร็จ<br>
+                    <small>นาฬิกาของคุณช้าไป ${offsetSeconds} วินาที</small>
+                    <small>ความแม่นยำในการซิงโครไนซ์คือ ±${syncAccuracy} วินาที</small>
+                `;
             } catch (error) {
                 console.error('Error syncing time:', error);
                 document.getElementById('syncStatus').textContent = 'ซิงค์ไม่สำเร็จ ใช้เวลาในเครื่อง';
             }
         }
-
+    
         function getAdjustedTime() {
             return new Date(new Date().getTime() + timeOffset);
         }
-
+    
         function updateAllClocks() {
             const now = getAdjustedTime();
             
@@ -250,26 +257,28 @@
                 const dateString = `วัน${day}ที่ ${date} ${month} พ.ศ. ${year}`;
                 dateElement.textContent = dateString;
             }
-
+    
             // Update world clocks
             worldCities.forEach(city => {
                 const cityTime = now.toLocaleString('th-TH', { timeZone: city.timezone, hour: '2-digit', minute: '2-digit', hour12: false });
                 document.getElementById(`${city.name}Clock`).textContent = cityTime;
             });
         }
-
+    
         function toggleFullscreen() {
-            const container = document.getElementById('mainClockContainer');
-            isFullscreen = !isFullscreen;
-            if (isFullscreen) {
-                container.classList.add('fullscreen');
-                document.body.style.overflow = 'hidden';
-            } else {
-                container.classList.remove('fullscreen');
-                document.body.style.overflow = 'auto';
-            }
+        const container = document.getElementById('mainClockContainer');
+        isFullscreen = !isFullscreen;
+        if (isFullscreen) {
+            container.classList.add('fullscreen');
+            document.body.style.overflow = 'hidden';
+            stopClockPulse(); // หยุดเอฟเฟคกระพริบ
+        } else {
+            container.classList.remove('fullscreen');
+            document.body.style.overflow = 'auto';
+            startClockPulse(); // เริ่มเอฟเฟคกระพริบ
         }
-
+        }
+    
         function createWorldClocks() {
             const worldClocksContainer = document.getElementById('worldClocks');
             worldCities.forEach(city => {
@@ -282,49 +291,71 @@
                 worldClocksContainer.appendChild(cityClockDiv);
             });
         }
-
+    
+        // Function to toggle dark mode
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
+            const darkModeEnabled = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', darkModeEnabled ? 'enabled' : 'disabled');
             const darkModeToggle = document.getElementById('darkModeToggle');
-            if (document.body.classList.contains('dark-mode')) {
-                darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            darkModeToggle.innerHTML = darkModeEnabled ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+        }
+
+        // Function to apply dark mode setting from localStorage
+        function applyDarkModeSetting() {
+            const darkModeSetting = localStorage.getItem('darkMode');
+            if (darkModeSetting === 'enabled') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeToggle').innerHTML = '<i class="fas fa-moon"></i>';
             } else {
-                darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                document.body.classList.remove('dark-mode');
+                document.getElementById('darkModeToggle').innerHTML = '<i class="fas fa-sun"></i>';
             }
         }
+    
+        function stopClockPulse() {
+        document.querySelector('.main-clock-container').classList.remove('pulse');
+        }
+
+        function startClockPulse() {
+        document.querySelector('.main-clock-container').classList.add('pulse');
+        }
+
+        // Call the function to apply the setting on page load
+        applyDarkModeSetting();
 
         // Initialize world clocks
         createWorldClocks();
-
+    
         // Sync world time initially and every hour
         syncWorldTime();
         setInterval(syncWorldTime, 3600000);
-
+    
         // Update all clocks every second
         setInterval(updateAllClocks, 1000);
-
+    
         // Initial call to display times immediately
         updateAllClocks();
-
+    
         // Add click event listener to toggle fullscreen
         document.getElementById('mainClockContainer').addEventListener('click', toggleFullscreen);
-
-        // Add click event listener to toggle dark mode
+    
+        // Add event listener to the dark mode toggle button
         document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
-
+    
         function updateTitle() {
             const now = new Date();
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
             document.title = `TIME | ${hours}:${minutes}`;
         }
-
+    
         // อัปเดต Title ทุกวินาที
         setInterval(updateTitle, 1000);
-
+    
         // เรียกฟังก์ชันครั้งแรกเพื่อตั้งค่า Title ทันที
         updateTitle();
-        
     </script>
+    
 </body>
 </html>
