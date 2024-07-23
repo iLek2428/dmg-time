@@ -184,7 +184,7 @@
             <div id="mainClock"></div>
             <div id="mainDate"></div>
             <div id="mainTimezone"></div>
-            <div id="syncStatus">กำลังซิงค์...</div>
+            <div id="syncStatus">กำลังปรับเทียบเวลา...</div>
         </div>
 
         <div class="world-clocks" id="worldClocks"></div>
@@ -225,13 +225,13 @@
                 const offsetSeconds = (timeOffset / 1000).toFixed(2);
                 const syncAccuracy = (0.01).toFixed(3);  // Placeholder accuracy value
                 document.getElementById('syncStatus').innerHTML = `
-                    ซิงค์เวลาสำเร็จ<br>
+                    ปรับเทียบเวลาสำเร็จ<br>
                     <small>นาฬิกาของคุณช้าไป ${offsetSeconds} วินาที</small>
-                    <small>ความแม่นยำในการซิงโครไนซ์คือ ±${syncAccuracy} วินาที</small>
+                    <small>ความแม่นยำในการปรับเทียบเวลาคือ ±${syncAccuracy} วินาที</small>
                 `;
             } catch (error) {
                 console.error('Error syncing time:', error);
-                document.getElementById('syncStatus').textContent = 'ซิงค์ไม่สำเร็จ ใช้เวลาในเครื่อง';
+                document.getElementById('syncStatus').textContent = 'การเปรียบเทียบเวลาไม่สำเร็จ ใช้เวลาในเครื่อง';
             }
         }
     
